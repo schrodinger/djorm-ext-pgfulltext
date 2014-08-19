@@ -238,7 +238,7 @@ class SearchQuerySet(QuerySet):
 
     def search(self, query, rank_field=None, rank_function='ts_rank', config=None,
                rank_normalization=32, raw=False, using=None, fields=None,
-               headline_field=None, headline_document=None):
+               headline_field=None, headline_document=None, force_alias=None):
         '''
         Convert query with to_tsquery or plainto_tsquery, depending on raw is
         `True` or `False`, and return a QuerySet with the filter.
@@ -261,6 +261,10 @@ class SearchQuerySet(QuerySet):
 
         Search headlines are explained here:
         http://www.postgresql.org/docs/9.1/static/textsearch-controls.html#TEXTSEARCH-HEADLINE
+
+        If `force_alias` is set, it will be used as the table alias, overriding
+        the default. This is useful when Django will be generating a subquery
+        and the default full table name will cause a SQL error.
         '''
 
         if not config:
@@ -281,9 +285,13 @@ class SearchQuerySet(QuerySet):
                 config,
                 force_text(query).replace("'", "''")
             )
+            if force_alias:
+                table_name = force_alias
+            else:
+                table_name = qn(self.model._meta.db_table)
 
             full_search_field = "%s.%s" % (
-                qn(self.model._meta.db_table),
+                table_name,
                 qn(self.manager.search_field)
             )
 
