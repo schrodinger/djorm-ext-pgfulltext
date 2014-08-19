@@ -137,6 +137,8 @@ class SearchManagerMixIn(object):
             using = self.db
 
         connection = connections[using]
+        if connection.vendor != "postgresql":
+            return
         qn = connection.ops.quote_name
 
         where_sql = ''
